@@ -1,0 +1,107 @@
+🏗️ 1-kun: Dastur yaratish va Dockerize qilish
+
+Bugun biz oddiy veb-ilova yaratamiz, uni Docker imajiga aylantiramiz va internetdagi omborga (Docker Hub) yuklaymiz.
+1-qadam: Loyiha papkasini yaratish
+
+Terminalni oching va quyidagi komandalar orqali loyiha muhitini yarating:
+Bash
+
+mkdir my-gitops-project
+cd my-gitops-project
+mkdir app
+cd app
+
+2-qadam: Python ilovasini yaratish (app.py)
+
+Bizga eng sodda veb-server kerak. app papkasi ichida app.py faylini yarating va quyidagi kodni ichiga joylang:
+Python
+
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    # Bu matnni 4-kunda o'zgartirib, avtomatizatsiyani tekshiramiz
+    return "<h1>GitOps Project v1.0</h1><p>Status: Running smoothly!</p>"
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000)
+
+3-qadam: Bog'liqliklar ro'yxati (requirements.txt)
+
+Dastur ishlashi uchun qaysi kutubxonalar kerakligini ko'rsatamiz:
+Plaintext
+
+Flask==3.0.0
+
+4-qadam: Dockerfile yaratish
+
+Bu eng muhim qadam. app papkasi ichida nomi aynan Dockerfile bo'lgan fayl oching (kengaytmasiz) va quyidagilarni yozing:
+Dockerfile
+
+# 1. Pythonning yengil versiyasini tanlaymiz
+FROM python:3.9-slim
+
+# 2. Konteyner ichidagi ishchi papkani belgilaymiz
+WORKDIR /app
+
+# 3. Kerakli fayllarni konteynerga nusxalaymiz
+COPY requirements.txt .
+
+# 4. Kutubxonalarni o'rnatamiz
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 5. Dastur kodini nusxalaymiz
+COPY . .
+
+# 6. Dastur qaysi portda ishlashini ko'rsatamiz
+EXPOSE 5000
+
+# 7. Dasturni ishga tushirish komandasi
+CMD ["python", "app.py"]
+
+5-qadam: Lokal test qilish (Build & Run)
+
+Endi imajni yig'amiz va kompyuterimizda tekshiramiz:
+
+    Imajni yig'ish:
+    Bash
+
+    docker build -t gitops-app:v1.0 .
+
+    Konteynerni ishga tushirish:
+    Bash
+
+    docker run -d -p 5000:5000 gitops-app:v1.0
+
+    Tekshirish: Brauzeringizda http://localhost:5000 manziliga kiring. "GitOps Project v1.0" yozuvini ko'rishingiz kerak.
+
+6-qadam: Docker Hub'ga yuklash (Push)
+
+Imajimingizni internetga (omborga) yuklashingiz kerak, shunda Kubernetes uni tortib ololadi.
+
+    Docker Hub'ga kiring: hub.docker.com dan ro'yxatdan o'ting.
+
+    Terminalda login qiling:
+    Bash
+
+    docker login
+
+    Imajga o'z ismingiz bilan "tag" bering: (O'z Docker Hub username-ingizni ishlating)
+    Bash
+
+    docker tag gitops-app:v1.0 YOUR_USERNAME/gitops-app:v1.0
+
+    Imajni push qiling:
+    Bash
+
+    docker push YOUR_USERNAME/gitops-app:v1.0
+
+💡 Bugun nimalarni o'rgandingiz?
+
+    Konteynerizatsiya: Dasturni barcha kerakli kutubxonalari bilan bitta "qutiga" (image) solishni.
+
+    Port Mapping: Konteyner ichidagi 5000-portni kompyuteringizdagi 5000-portga bog'lashni.
+
+    Registry: Tayyor imajni bulutli saqlash joyiga (Docker Hub) yuklashni

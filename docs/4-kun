@@ -1,0 +1,88 @@
+Bugun 4-kun: GitOps Halqasini Yakunlash va Test qilish.
+
+Bugun biz butun zanjirni birlashtiramiz. Maqsad: Dastur kodini o'zgartirish va birorta ham kubectl yoki docker komandasini ishlatmasdan, o'zgarish Kubernetes'da aks etishini ko'rish.
+🔄 4-kun: To'liq Avtomatizatsiyani Tekshirish (The Grand Finale)
+1-qadam: GitHub Actions-ni Config Repo bilan bog'lash
+
+Hozircha bizda ikkita alohida qism bor:
+
+    my-gitops-app (Docker image build qiladi).
+
+    my-gitops-config (ArgoCD uni kuzatadi).
+
+Bizga zanjir kerak. Ya'ni, image build bo'lgandan keyin, GitHub Actions avtomatik ravishda Config repodagi deployment.yaml ichidagi imaj versiyasini yangilashi kerak.
+
+    GitHub Token yarating: GitHub'da Settings -> Developer settings -> Personal access tokens (classic) bo'limiga o'ting va repo huquqi bilan token yarating. Uni nusxalab oling.
+
+    Secret qo'shing: my-gitops-app reposiga kiring va Settings -> Secrets bo'limiga GIT_TOKEN nomi bilan shu tokenni saqlang.
+
+    Pipeline-ni yangilang: .github/workflows/ci.yml fayliga quyidagi "Update Config" qismini qo'shing:
+
+YAML
+
+    # CI faylingizning oxiriga qo'shing:
+    - name: Update Kubernetes Manifest
+      run: |
+        git clone https://x-access-token:${{ secrets.GIT_TOKEN }}@github.com/YOUR_USERNAME/my-gitops-config.git
+        cd my-gitops-config
+        # deployment.yaml ichidagi imajni yangi SHA bilan almashtirish
+        sed -i "s|image: .*|image: ${{ secrets.DOCKER_USERNAME }}/gitops-app:${{ github.sha }}|g" deployment.yaml
+        git config --global user.email "devops-bot@example.com"
+        git config --global user.name "DevOps Bot"
+        git add deployment.yaml
+        git commit -m "Update image to ${{ github.sha }}"
+        git push origin main
+
+2-qadam: "Sehrli" Test (Live Update)
+
+Endi hamma narsani ishlatib ko'ramiz:
+
+    Kodga o'zgartirish kiriting: app/app.py faylini oching va matnni o'zgartiring:
+    Python
+
+    return "<h1>GitOps Project v2.0 - IT WORKS!</h1>"
+
+    Push qiling:
+    Bash
+
+    git add .
+    git commit -m "Upgrade to v2.0"
+    git push origin main
+
+3-qadam: Jarayonni kuzatish (The Flow)
+
+Endi qo'llaringizni klaviaturadan oling va quyidagilarni kuzating:
+
+    GitHub Actions: my-gitops-app reposida yangi image build bo'ladi va push qilinadi.
+
+    Auto-Commit: GitHub Actions avtomatik ravishda my-gitops-config reposiga kirib, YAML faylni yangilaydi.
+
+    ArgoCD: 1-2 daqiqadan so'ng ArgoCD dashboardida "Out of Sync" yozuvi paydo bo'ladi va darhol "Synced" holatiga qaytadi.
+
+    Natija: Brauzeringizda (yoki minikube service webapp-service orqali) sahifani yangilang. "v2.0 - IT WORKS!" yozuvini ko'rishingiz kerak!
+
+4-qadam: Loyihani Portfolioga tayyorlash (README)
+
+Bu loyiha siz uchun katta bilim bo'ldi. Uni boshqalarga ko'rsatish uchun README.md faylini quyidagi struktura bilan to'ldiring:
+
+    Project Title: End-to-End GitOps Pipeline.
+
+    Tools: Docker, Kubernetes, GitHub Actions, ArgoCD, Python.
+
+    Architecture Diagram: Excalidraw'da chizilgan chizmani qo'shing.
+
+    How to run: Qadam-baqadam o'rnatish yo'riqnomasi.
+
+💡 Xulosa: Siz nimalarni o'rgandingiz?
+
+Siz 4 kun ichida zamonaviy DevOps-ning "yuragi" bo'lgan GitOps falsafasini amalda tushunib yetdingiz:
+
+    Dasturni izolyatsiya qilish (Docker).
+
+    Build jarayonini avtomatlashtirish (CI).
+
+    Infratuzilmani kod ko'rinishida saqlash (IaC).
+
+    Tizimni doimiy ravishda Git bilan sinxron ushlab turish (CD/GitOps).
+
+Keyingi qadam: Loyihangizni LinkedIn yoki biror DevOps hamjamiyatida ulashmoqchimisiz? Agar xohlasangiz, loyihangiz uchun chiroyli texnik post yozishda yordam berishim mumkin!

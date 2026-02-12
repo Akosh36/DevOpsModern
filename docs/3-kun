@@ -1,0 +1,107 @@
+Bugun 3-kun: GitOps Sehrgari — ArgoCD.
+
+Maqsadimiz: Kubernetes klasterini o'rnatish, uning ichiga ArgoCD joylashtirish va uni bizning my-gitops-config repositoriyamizga bog'lash. Shundan so'ng, ArgoCD bizning repomizdagi YAML fayllarni o'qib, ilovani avtomatik "deploy" qiladi.
+☸️ 3-kun: Kubernetes va ArgoCD Sozlamalari
+1-qadam: Kubernetes-ni ishga tushirish
+
+Agar kompyuteringizda Kubernetes bo'lmasa, Minikube eng yaxshi tanlovdir.
+
+    Minikube-ni ishga tushiring:
+    Bash
+
+    minikube start
+
+    Klavishni tekshiring:
+    Bash
+
+    kubectl get nodes
+
+    (Bu yerda bitta "Ready" holatidagi nodni ko'rishingiz kerak).
+
+2-qadam: ArgoCD-ni klasterga o'rnatish
+
+ArgoCD - bu Kubernetes ichida ishlaydigan dastur. Uni o'rnatish uchun quyidagi komandalarni ketma-ket bering:
+
+    Alohida namespace ochish:
+    Bash
+
+    kubectl create namespace argocd
+
+    ArgoCD manifestlarini yuklash:
+    Bash
+
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+    Hamma podlar tayyor bo'lishini kuting:
+    Bash
+
+    kubectl get pods -n argocd
+
+3-qadam: ArgoCD Dashboard-ga kirish
+
+ArgoCD-ning chiroyli vizual paneli bor. Unga kirish uchun:
+
+    Serverni tashqariga ochish (Port-forward): (Bu terminalni yopmang!)
+    Bash
+
+    kubectl port-forward svc/argocd-server -n argocd 8080:443
+
+    Admin parolini olish: Yangi terminal oching va buni yozing:
+    Bash
+
+    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+
+    Brauzerda kiring: https://localhost:8080 (Xavfsizlik ogohlantishini "Advanced -> Proceed" deb o'tib keting).
+
+        User: admin
+
+        Password: (Yuqorida terminalda chiqqan parol).
+
+4-qadam: ArgoCD-da "Application" yaratish
+
+Endi ArgoCD-ga bizning Git repositoriyamizni kuzatishni buyuramiz.
+
+    Dashboard-da "+ New App" tugmasini bosing.
+
+    General bo'limi:
+
+        Application Name: my-gitops-app
+
+        Project: default
+
+        Sync Policy: Automatic (GitOps-ning asosi shu!)
+
+    Source bo'limi:
+
+        Repository URL: https://github.com/YOUR_USERNAME/my-gitops-config.git
+
+        Path: . (Nuqta qo'ying, ya'ni asosiy papka)
+
+    Destination bo'limi:
+
+        Cluster URL: https://kubernetes.default.svc
+
+        Namespace: default
+
+    CREATE tugmasini bosing.
+
+5-qadam: Natijani tekshirish
+
+ArgoCD darhol repongizga ulanadi va u yerdagi deployment.yaml va service.yaml fayllarini o'qib, podlarni yarata boshlaydi.
+
+    Dashboard-da ilovangiz ustiga bosing, u yerda Kubernetes obyektlari (Pod, Service, ReplicaSet) chiroyli daraxt shaklida ko'rinadi.
+
+    Dasturni brauzerda ko'rish:
+    Bash
+
+    minikube service webapp-service
+
+    Bu komanda sizga brauzerda dasturingizni ochib beradi. Siz u yerda "GitOps Project v1.0" yozuvini ko'rasiz.
+
+💡 Bugun nimalarni o'rgandingiz?
+
+    Kubernetes Basics: Pod va Namespace nimaligini.
+
+    ArgoCD: Git repositoriyani "haqiqat manbai" (Source of Truth) sifatida ishlatishni.
+
+    Reconciliation Loop: ArgoCD Git-dagi kod va Kubernetes-dagi holatni qanday qilib bir xil ushlab turishini.

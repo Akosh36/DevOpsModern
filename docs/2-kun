@@ -1,0 +1,130 @@
+Bugun 2-kun: CI (Continuous Integration) bosqichidamiz.
+
+Maqsadimiz: Siz har safar kodni GitHub’ga yuborganingizda (push), GitHub o‘zi avtomatik ravishda Docker imajini build qilib, Docker Hub’ga yangilab qo‘ysin. Bu orqali biz qo‘lda docker build va docker push qilishdan qutulamiz.
+🛠️ 2-kun: GitHub Actions orqali Avtomatlashtirish
+1-qadam: GitHub Repositoriyasini yaratish
+
+    GitHub-ga kiring va yangi repository oching (nomi: my-gitops-app).
+
+    Lokal kompyuteringizdagi app papkasi ichida turib, kodni GitHub’ga yuklang:
+
+Bash
+
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/my-gitops-app.git
+git push -u origin main
+
+2-qadam: GitHub Secrets sozlash (Xavfsizlik)
+
+Docker Hub parolingizni kod ichida yozish xavfli. Shuning uchun GitHub’ga ularni "yashirin" holda beramiz:
+
+    GitHub repositoriyangizga kiring.
+
+    Settings -> Secrets and variables -> Actions bo'limiga o'ting.
+
+    New repository secret tugmasini bosing va quyidagilarni qo'shing:
+
+        DOCKER_USERNAME: Docker Hub foydalanuvchi nomingiz.
+
+        DOCKER_PASSWORD: Docker Hub parolingiz (yoki Access Token).
+
+3-qadam: CI Pipeline yaratish (workflow)
+
+Endi GitHub-ga "nima qilish kerakligini" o'rgatamiz. Loyihangiz ichida quyidagi papkalarni yarating: .github/workflows/. Uning ichida ci.yml faylini oching va quyidagi kodni nusxalang:
+YAML
+
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ "main" ]  # Faqat main branchga push bo'lganda ishlaydi
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Kodni GitHub runner-ga tortib olish
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 2. Docker Hub-ga login qilish
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    # 3. Docker imajini build qilish va push qilish
+    - name: Build and Push
+      uses: docker/build-push-action@v4
+      with:
+        context: ./app
+        push: true
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/gitops-app:latest
+          ${{ secrets.DOCKER_USERNAME }}/gitops-app:${{ github.sha }}
+
+4-qadam: Avtomatizatsiyani tekshirish
+
+    Ushbu yangi yaratilgan .github/workflows/ci.yml faylini GitHub’ga push qiling.
+
+    GitHub repositoriyangizdagi Actions tabiga o'ting.
+
+    U yerda "Build and Push Docker Image" degan jarayon (workflow) ishlayotganini ko'rasiz.
+
+    Yashil belgi (✅) chiqqandan so'ng, Docker Hub-ga kiring. Imajingiz yangilangan bo'lishi kerak!
+
+🛠️ 2.5-qadam: GitOps uchun "Config Repo" tayyorlash
+
+GitOps qoidasiga ko'ra, Dastur kodi va Kubernetes sozlamalari alohida repositoriyalarda bo'lishi kerak.
+
+    GitHub-da yana bitta yangi repository oching: my-gitops-config.
+
+    Ichida deployment.yaml faylini yarating. Bu fayl Kubernetes-ga ilovani qanday ishga tushirishni aytadi:
+
+YAML
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitops-webapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: webapp
+        image: YOUR_USERNAME/gitops-app:latest # O'z ismingizni yozing
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+spec:
+  selector:
+    app: webapp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: NodePort
+
+💡 Bugun nimalarni o'rgandingiz?
+
+    GitHub Actions: Kod o'zgarganda ishlarni avtomatlashtiruvchi "robot".
+
+    Secrets: Maxfiy ma'lumotlarni xavfsiz saqlash.
+
+    Separation of Concerns: Dastur kodi (App Repo) va Infratuzilma kodi (Config Repo) alohida bo'lishi kerakligini.
